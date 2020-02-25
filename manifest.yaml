@@ -14,7 +14,7 @@ organizational_units:
     core_accounts:
       # Security account
       - name: security
-        email: khyew21+lz+sec@gmail.com
+        email: khyew21+lz+security@gmail.com
         ssm_parameters:
           - name: /org/member/security/account_id
             value: $[AccountId]
