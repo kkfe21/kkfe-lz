@@ -6,13 +6,6 @@ Parameters:
     Type: String
     Default: CloudTrail/DefaultLogGroup
     Description: Enter CloudWatch Logs log group name. Default is CloudTrail/DefaultLogGroup
-  EnableUnauthorizedORAccessDeniedAlarm:
-    Type: String
-    Description: "Enable alarm for unauthorized operation OR access denided?"
-    Default: true
-    AllowedValues:
-    - true
-    - false
   EnableSecurityGroupChangeAlarm:
     Type: String
     Description: "Enable alarm for security group changes?"
@@ -96,9 +89,6 @@ Parameters:
     Description: "Local Admin SNS Topic for Landing Zone"
     
 Conditions:
-  EnableUnauthorizedORAccessDenied: !Equals
-    - !Ref EnableUnauthorizedORAccessDeniedAlarm
-    - 'true'
   EnableSecurityGroupChange: !Equals
     - !Ref EnableSecurityGroupChangeAlarm
     - 'true'
@@ -135,38 +125,6 @@ Conditions:
 
 
 Resources:
-  CloudTrailOperationFileter:
-    Type: AWS::Logs::MetricFilter
-    Condition: EnableUnauthorizedORAccessDenied
-    Properties:
-      LogGroupName:
-        Ref: LogGroupName
-      FilterPattern: '{ ($.errorCode = "*UnauthorizedOperation") || ($.errorCode = "AccessDenied*") }'
-      MetricTransformations:
-      - MetricNamespace: CloudTrailMetrics
-        MetricName: UnauthorizedOperationORAccessDenied
-        MetricValue: '1'
-  UnauthorizedORAccessDeniedAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-          - id: W28
-            reason: "The alarm name is defined to identify AWS Landing Zone resources."
-    Condition: EnableUnauthorizedORAccessDenied
-    Properties:
-      AlarmName: CloudTrailUnauthorizedORAccessDenied
-      AlarmDescription: Alarms when an API call is made to create,detect UnauthorizedOperation or Access denied.
-      AlarmActions:
-      - !Ref SNSNotificationTopic
-      MetricName: UnauthorizedOperationORAccessDenied
-      Namespace: CloudTrailMetrics
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      EvaluationPeriods: '1'
-      Period: '300'
-      Statistic: Sum
-      Threshold: '1'
-      TreatMissingData: notBreaching
   SecurityGroupChangesMetricFilter:
     Type: AWS::Logs::MetricFilter
     Condition: EnableSecurityGroupChange
