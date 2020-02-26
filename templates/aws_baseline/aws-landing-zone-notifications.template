@@ -137,11 +137,36 @@ Conditions:
 Resources:
   CloudTrailOperationFileter:
     Type: AWS::Logs::MetricFilter
-    Condition: EnableUnauthorizedORAccessDeniedAlarm
+    Condition: EnableUnauthorizedORAccessDenied
     Properties:
       LogGroupName:
         Ref: LogGroupName
-      FilterPattern: "{ ($.errorCode = "*UnauthorizedOperation") || ($.errorCode = "AccessDenied*") }"
+      FilterPattern: '{ ($.errorCode = "*UnauthorizedOperation") || ($.errorCode = "AccessDenied*") }'
+      MetricTransformations:
+      - MetricNamespace: CloudTrailMetrics
+        MetricName: UnauthorizedOperationORAccessDenied
+        MetricValue: '1'
+  UnauthorizedORAccessDeniedAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "The alarm name is defined to identify AWS Landing Zone resources."
+    Condition: EnableUnauthorizedORAccessDenied
+    Properties:
+      AlarmName: CloudTrailUnauthorizedORAccessDenied
+      AlarmDescription: Alarms when an API call is made to create,detect UnauthorizedOperation or Access denied.
+      AlarmActions:
+      - !Ref SNSNotificationTopic
+      MetricName: UnauthorizedOperationORAccessDenied
+      Namespace: CloudTrailMetrics
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: '1'
+      Period: '300'
+      Statistic: Sum
+      Threshold: '1'
+      TreatMissingData: notBreaching
   SecurityGroupChangesMetricFilter:
     Type: AWS::Logs::MetricFilter
     Condition: EnableSecurityGroupChange
