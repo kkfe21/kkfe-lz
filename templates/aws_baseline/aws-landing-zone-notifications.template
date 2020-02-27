@@ -6,6 +6,13 @@ Parameters:
     Type: String
     Default: CloudTrail/DefaultLogGroup
     Description: Enter CloudWatch Logs log group name. Default is CloudTrail/DefaultLogGroup
+  EnableConfigChangeAlarm:
+    Type: String
+    Description: "Enable alarm for Config changes?"
+    Default: true
+    AllowedValues:
+    - true
+    - false
   EnableSecurityGroupChangeAlarm:
     Type: String
     Description: "Enable alarm for security group changes?"
@@ -89,6 +96,9 @@ Parameters:
     Description: "Local Admin SNS Topic for Landing Zone"
     
 Conditions:
+  EnableConfigChange: !Equals
+    - !Ref EnableConfigChangeAlarm
+    - 'true'
   EnableSecurityGroupChange: !Equals
     - !Ref EnableSecurityGroupChangeAlarm
     - 'true'
@@ -125,6 +135,40 @@ Conditions:
 
 
 Resources:
+  ConfigChangesMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: EnableConfigChange
+    Properties:
+      LogGroupName:
+        Ref: LogGroupName
+      FilterPattern: "{ ($.eventSource = config.amazonaws.com) && (($.eventName=StopConfigurationRecorder)
+      ||($.eventName=DeleteDeliveryChannel) ||($.eventName=PutDeliveryChannel)
+      ||($.eventName=PutConfigurationRecorder)) }"
+      MetricTransformations:
+      - MetricNamespace: CloudTrailMetrics
+        MetricName: ConfigChangeEventCount
+        MetricValue: '1'
+  ConfigChangesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "The alarm name is defined to identify AWS Landing Zone resources."
+    Condition: EnableConfigChange
+    Properties:
+      AlarmName: CloudTrailSecurityGroupChanges
+      AlarmDescription: Alarms when an Config changes, stop or delete config.
+      AlarmActions:
+      - !Ref SNSNotificationTopic
+      MetricName: ConfigChangeEventCount
+      Namespace: CloudTrailMetrics
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: '1'
+      Period: '300'
+      Statistic: Sum
+      Threshold: '1'
+      TreatMissingData: notBreaching
   SecurityGroupChangesMetricFilter:
     Type: AWS::Logs::MetricFilter
     Condition: EnableSecurityGroupChange

@@ -4,6 +4,10 @@
     "ParameterValue": "CloudTrail/Landing-Zone-Logs"
   },
   {
+    "ParameterKey": "EnableConfigChangeAlarm",
+    "ParameterValue": "true"
+  },
+  {
     "ParameterKey": "EnableSecurityGroupChangeAlarm",
     "ParameterValue": "true"
   },
