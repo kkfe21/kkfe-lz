@@ -117,6 +117,14 @@ organizational_units:
 
 # Landing Zone Service Control Policies
 organization_policies:
+  - name: prevent-organizations-create-delete
+    description: To prevent creation of accounts or removal of accounts from Organization.
+    policy_file: policies/prevent_organization_edit.json
+    #Apply to accounts in the following OU(s)
+    apply_to_accounts_in_ou:
+      - core
+      - applications
+
   - name: aws-landing-zone-core-mandatory-preventive-guardrails
     description: To prevent from deleting or disabling resources in core accounts managed by AWS Landing Zone
     policy_file: policies/aws-landing-zone-core-mandatory-preventive-guardrails.json
