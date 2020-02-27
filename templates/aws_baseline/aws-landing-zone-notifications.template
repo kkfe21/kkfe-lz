@@ -157,11 +157,11 @@ Resources:
             reason: "The alarm name is defined to identify AWS Landing Zone resources."
     Condition: EnableAWSConfigChange
     Properties:
-      AlarmName: AWSConfigChanges
+      AlarmName: AWSConfigChangesAlarm
       AlarmDescription: Alarm when an AWS Config changes, stop or delete.
       AlarmActions:
       - !Ref SNSNotificationTopic
-      MetricNamespace: AWSConfigChanges
+      MetricName: AWSConfigChanges
       Namespace: CloudTrailMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
       EvaluationPeriods: '1'
