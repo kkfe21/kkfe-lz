@@ -6,6 +6,20 @@ Parameters:
     Type: String
     Default: CloudTrail/DefaultLogGroup
     Description: Enter CloudWatch Logs log group name. Default is CloudTrail/DefaultLogGroup
+  EnableLoginWithoutMFAAlarm:
+    Type: String
+    Description: "Enable alarm for AWS console login without MFA?"
+    Default: true
+    AllowedValues:
+    - true
+    - false
+  EnableConfigChangeAlarm:
+    Type: String
+    Description: "Enable alalrm for AWS Config changes?"
+    Default: true
+    AllowedValues:
+     - true
+     - false
   EnableSecurityGroupChangeAlarm:
     Type: String
     Description: "Enable alarm for security group changes?"
@@ -89,6 +103,12 @@ Parameters:
     Description: "Local Admin SNS Topic for Landing Zone"
     
 Conditions:
+  EnableLoginWithoutMFA: !Equals
+    - !Ref EnableLoginWithoutMFAAlarm
+    - 'true'
+  EnableConfigChange: !Equals
+    - !Ref EnableConfigChangeAlarm
+    - 'true'
   EnableSecurityGroupChange: !Equals
     - !Ref EnableSecurityGroupChangeAlarm
     - 'true'
@@ -125,6 +145,73 @@ Conditions:
 
 
 Resources:
+  LoginWithoutMFAMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: EnableLoginWithoutMFA
+    Properties:
+      LogGroupName:
+        Ref: LogGroupName
+      FilterPattern:  '{ ($.eventName = "ConsoleLogin") && ($.additionalEventData.MFAUsed != "Yes") }'
+      MetricTransformations:
+      - MetricNamespace: CloudTrailMetrics
+        MetricName: LoginWithoutMFAEventCount
+        MetricValue: '1'
+  LoginWithoutMFAAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "The alarm name is defined to identify AWS Landing Zone resources."
+    Condition: EnableLoginWithoutMFA
+    Properties:
+      AlarmName: CloudTrailSecurityGroupChanges
+      AlarmDescription: Alarms when an API call is made to create, update or delete
+        a Security Group.
+      AlarmActions:
+      - !Ref SNSNotificationTopic
+      MetricName: LoginWithoutMFAEventCount
+      Namespace: CloudTrailMetrics
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: '1'
+      Period: '300'
+      Statistic: Sum
+      Threshold: '1'
+      TreatMissingData: notBreaching
+  AWSConfigChangesMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: EnableConfigChange
+    Properties:
+      LogGroupName:
+        Ref: LogGroupName
+      FilterPattern: "{ ($.eventSource = config.amazonaws.com) && (($.eventName = StopConfigurationRecorder)
+        ||($.eventName = DeleteDeliveryChannel)||($.eventName = PutDeliveryChannel)
+        ||($.eventName = PutConfigurationRecorder)) }"
+      MetricTransformations:
+      - MetricNamespace: CloudTrailMetrics
+        MetricName: ConfigEventCount
+        MetricValue: '1'
+  AWSConfigChangeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "The alarm name is defined to identify AWS Landing Zone resources."
+    Condition: EnableConfigChange
+    Properties:
+      AlarmName: AWSConfigChangesAlarm
+      AlarmDescription: Alarm when an AWS Config changes, stop or delete.
+      AlarmActions:
+      - !Ref SNSNotificationTopic
+      MetricName: AWSConfigChanges
+      Namespace: CloudTrailMetrics
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: '1'
+      Period: '300'
+      Statistic: Sum
+      Threshold: '1'
+      TreatMissingData: notBreaching
   SecurityGroupChangesMetricFilter:
     Type: AWS::Logs::MetricFilter
     Condition: EnableSecurityGroupChange
