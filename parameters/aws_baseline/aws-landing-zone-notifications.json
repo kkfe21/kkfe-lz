@@ -4,10 +4,6 @@
     "ParameterValue": "CloudTrail/Landing-Zone-Logs"
   },
   {
-    "ParameterKey": "EnableLoginWithoutMFAAlarm",
-    "ParameterValue": "true"
-  },
-  {
     "ParameterKey": "EnableSecurityGroupChangeAlarm",
     "ParameterValue": "true"
   },

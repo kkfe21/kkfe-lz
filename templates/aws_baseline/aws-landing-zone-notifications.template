@@ -6,13 +6,6 @@ Parameters:
     Type: String
     Default: CloudTrail/DefaultLogGroup
     Description: Enter CloudWatch Logs log group name. Default is CloudTrail/DefaultLogGroup
-  EnableLoginWithoutMFAAlarm:
-    Type: String
-    Description: "Enable alarm for Login without MFA?"
-    Default: true
-    AllowedValues:
-    - true
-    - false
   EnableSecurityGroupChangeAlarm:
     Type: String
     Description: "Enable alarm for security group changes?"
@@ -96,9 +89,6 @@ Parameters:
     Description: "Local Admin SNS Topic for Landing Zone"
     
 Conditions:
-  EnableLoginWithoutMFA: !Equals
-    - !Ref EnableLoginWithoutMFAAlarm
-    - 'true'
   EnableSecurityGroupChange: !Equals
     - !Ref EnableSecurityGroupChangeAlarm
     - 'true'
@@ -135,38 +125,6 @@ Conditions:
 
 
 Resources:
-  LoginWithoutMFAMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Condition: EnableLoginWithoutMFA
-    Properties:
-      LogGroupName:
-        Ref: LogGroupName
-      FilterPattern: '{ ($.eventName = "ConsoleLogin") && ($.additionalEventData.MFAUsed != "Yes") }'
-      MetricTransformations:
-      - MetricNamespace: CloudTrailMetrics
-        MetricName: LoginWithoutMFACount
-        MetricValue: '1'
-  LoginWithoutMFAAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-          - id: W28
-            reason: "The alarm name is defined to identify AWS Landing Zone resources."
-    Condition: EnableLoginWithoutMFA
-    Properties:
-      AlarmName: AWSConfigChangesAlarm
-      AlarmDescription: Alarm when an login without MFA to AWS.
-      AlarmActions:
-      - !Ref SNSNotificationTopic
-      MetricName: LoginWithoutMFACount
-      Namespace: CloudTrailMetrics
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      EvaluationPeriods: '1'
-      Period: '300'
-      Statistic: Sum
-      Threshold: '1'
-      TreatMissingData: notBreaching
   SecurityGroupChangesMetricFilter:
     Type: AWS::Logs::MetricFilter
     Condition: EnableSecurityGroupChange
