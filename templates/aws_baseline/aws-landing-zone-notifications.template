@@ -13,13 +13,6 @@ Parameters:
     AllowedValues:
     - true
     - false
-  EnableAWSConfigChangeAlarm:
-    Type: String
-    Description: "Enable alarm for AWS config changes?"
-    Default: true
-    AllowedValues:
-    - true
-    - false
   EnableSecurityGroupChangeAlarm:
     Type: String
     Description: "Enable alarm for security group changes?"
@@ -106,9 +99,6 @@ Conditions:
   EnableLoginWithoutMFA: !Equals
     - !Ref EnableLoginWithoutMFAAlarm
     - 'true'
-  EnableAWSConfigChange: !Equals
-    - !Ref EnableAWSConfigChangeAlarm
-    - 'true'
   EnableSecurityGroupChange: !Equals
     - !Ref EnableSecurityGroupChangeAlarm
     - 'true'
@@ -170,40 +160,6 @@ Resources:
       AlarmActions:
       - !Ref SNSNotificationTopic
       MetricName: LoginWithoutMFACount
-      Namespace: CloudTrailMetrics
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      EvaluationPeriods: '1'
-      Period: '300'
-      Statistic: Sum
-      Threshold: '1'
-      TreatMissingData: notBreaching
-  AWSConfigChangesMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Condition: EnableAWSConfigChange
-    Properties:
-      LogGroupName:
-        Ref: LogGroupName
-      FilterPattern: "{ ($.eventSource = config.amazonaws.com) && (($.eventName = StopConfigurationRecorder)
-        ||($.eventName = DeleteDeliveryChannel)||($.eventName = PutDeliveryChannel)
-        ||($.eventName = PutConfigurationRecorder)) }"
-      MetricTransformations:
-      - MetricNamespace: CloudTrailMetrics
-        MetricName: ConfigEventCount
-        MetricValue: '1'
-  AWSConfigChangeAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-          - id: W28
-            reason: "The alarm name is defined to identify AWS Landing Zone resources."
-    Condition: EnableAWSConfigChange
-    Properties:
-      AlarmName: AWSConfigChangesAlarm
-      AlarmDescription: Alarm when an AWS Config changes, stop or delete.
-      AlarmActions:
-      - !Ref SNSNotificationTopic
-      MetricName: AWSConfigChanges
       Namespace: CloudTrailMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
       EvaluationPeriods: '1'

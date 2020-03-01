@@ -8,10 +8,6 @@
     "ParameterValue": "true"
   },
   {
-    "ParameterKey": "EnableAWSConfigChangeAlarm",
-    "ParameterValue": "true"
-  },
-  {
     "ParameterKey": "EnableSecurityGroupChangeAlarm",
     "ParameterValue": "true"
   },
